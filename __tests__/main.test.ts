@@ -3,11 +3,11 @@ import * as github from '@actions/github';
 import {Octokit} from '@octokit/rest';
 
 import {
-  IssueProcessor,
+  MilestoneProcessor,
   Issue,
-  Label,
-  IssueProcessorOptions
-} from '../src/IssueProcessor';
+  Milestone,
+  MilestoneProcessorOptions
+} from '../src/MilestoneProcessor';
 
 function generateIssue(
   id: number,
@@ -31,304 +31,134 @@ function generateIssue(
   };
 }
 
-const DefaultProcessorOptions: IssueProcessorOptions = {
+function generateMilestone(
+  id: number,
+  number: number,
+  title: string,
+  description: string,
+  updatedAt: string,
+  openIssues: number,
+  closedIssues: number,
+  isClosed: boolean = false
+): Milestone {
+  return {
+    id: id,
+    number: number,
+    description: description,
+    title: title,
+    updated_at: updatedAt,
+    open_issues: openIssues,
+    closed_issues: closedIssues,
+    state: isClosed ? 'closed' : 'open'
+  };
+}
+
+const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
-  staleIssueMessage: 'This issue is stale',
-  stalePrMessage: 'This PR is stale',
-  daysBeforeStale: 1,
-  daysBeforeClose: 1,
-  staleIssueLabel: 'Stale',
-  exemptIssueLabels: '',
-  stalePrLabel: 'Stale',
-  exemptPrLabels: '',
-  onlyLabels: '',
-  operationsPerRun: 100,
   debugOnly: true
 };
 
-test('empty issue list results in 1 operation', async () => {
-  const processor = new IssueProcessor(DefaultProcessorOptions, async () => []);
+test('empty milestone list results in 1 operation', async () => {
+  const processor = new MilestoneProcessor(
+    DefaultProcessorOptions,
+    async () => []
+  );
 
-  // process our fake issue list
-  const operationsLeft = await processor.processIssues(1);
+  // process our fake milestone list
+  const operationsLeft = await processor.processMilestones(1);
 
-  // processing an empty issue list should result in 1 operation
+  // processing an empty milestone list should result in 1 operation
   expect(operationsLeft).toEqual(99);
 });
 
-test('processing an issue with no label will make it stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z')
+test('processing a milestone with all closed issues will close it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'Sprint 1',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      0,
+      3
+    )
   ];
 
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
   );
 
-  // process our fake issue list
-  await processor.processIssues(1);
+  // process our fake list
+  await processor.processMilestones(1);
 
-  expect(processor.staleIssues.length).toEqual(1);
-  expect(processor.closedIssues.length).toEqual(0);
+  expect(processor.closedMilestones.length).toEqual(1);
 });
 
-test('processing a stale issue will close it', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Stale'])
+test('processing a milestone with only closed issues will close it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      0,
+      100
+    )
   ];
 
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
   );
 
-  // process our fake issue list
-  await processor.processIssues(1);
+  // process our fake list
+  await processor.processMilestones(1);
 
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(1);
+  expect(processor.closedMilestones.length).toEqual(1);
 });
 
-test('processing a stale PR will close it', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first PR', '2020-01-01T17:00:00Z', true, ['Stale'])
+test('processing a milestone with only open issues will not close it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      10,
+      0
+    )
   ];
 
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
   );
 
-  // process our fake issue list
-  await processor.processIssues(1);
+  // process our fake list
+  await processor.processMilestones(1);
 
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(1);
+  expect(processor.closedMilestones.length).toEqual(0);
 });
 
-test('closed issues will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, [], true)
+test('processing a milestone with only a few issues will not close it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      1,
+      1
+    )
   ];
 
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
   );
 
-  // process our fake issue list
-  await processor.processIssues(1);
+  // process our fake list
+  await processor.processMilestones(1);
 
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('stale closed issues will not be closed', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Stale'], true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('closed prs will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first PR', '2020-01-01T17:00:00Z', true, [], true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('stale closed prs will not be closed', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first PR', '2020-01-01T17:00:00Z', true, ['Stale'], true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('locked issues will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, [], false, true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('stale locked issues will not be closed', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Stale'], false, true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('locked prs will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first PR', '2020-01-01T17:00:00Z', true, [], false, true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('stale locked prs will not be closed', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first PR', '2020-01-01T17:00:00Z', true, ['Stale'], false, true)
-  ];
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('exempt issue labels will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, [
-      'Exempt'
-    ])
-  ];
-
-  let opts = DefaultProcessorOptions;
-  opts.exemptIssueLabels = 'Exempt';
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('exempt issue labels will not be marked stale (multi issue label with spaces)', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Cool'])
-  ];
-
-  let opts = DefaultProcessorOptions;
-  opts.exemptIssueLabels = 'Exempt, Cool, None';
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('exempt issue labels will not be marked stale (multi issue label)', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Cool'])
-  ];
-
-  let opts = DefaultProcessorOptions;
-  opts.exemptIssueLabels = 'Exempt,Cool,None';
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(0);
-  expect(processor.closedIssues.length).toEqual(0);
-});
-
-test('exempt pr labels will not be marked stale', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, ['Cool']),
-    generateIssue(2, 'My first PR', '2020-01-01T17:00:00Z', true, ['Cool']),
-    generateIssue(3, 'Another issue', '2020-01-01T17:00:00Z', false)
-  ];
-
-  let opts = DefaultProcessorOptions;
-  opts.exemptIssueLabels = 'Cool';
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.staleIssues.length).toEqual(2); // PR should get processed even though it has an exempt **issue** label
-});
-
-test('stale issues should not be closed if days is set to -1', async () => {
-  const TestIssueList: Issue[] = [
-    generateIssue(1, 'My first issue', '2020-01-01T17:00:00Z', false, [
-      'Stale'
-    ]),
-    generateIssue(2, 'My first PR', '2020-01-01T17:00:00Z', true, ['Stale']),
-    generateIssue(3, 'Another issue', '2020-01-01T17:00:00Z', false, ['Stale'])
-  ];
-
-  let opts = DefaultProcessorOptions;
-  opts.daysBeforeClose = -1;
-
-  const processor = new IssueProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestIssueList : []
-  );
-
-  // process our fake issue list
-  await processor.processIssues(1);
-
-  expect(processor.closedIssues.length).toEqual(0);
+  expect(processor.closedMilestones.length).toEqual(0);
 });

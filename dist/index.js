@@ -3729,13 +3729,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const IssueProcessor_1 = __webpack_require__(656);
+const MilestoneProcessor_1 = __webpack_require__(875);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const args = getAndValidateArgs();
-            const processor = new IssueProcessor_1.IssueProcessor(args);
-            yield processor.processIssues();
+            const processor = new MilestoneProcessor_1.MilestoneProcessor(args);
+            yield processor.processMilestones();
         }
         catch (error) {
             core.error(error);
@@ -3746,27 +3746,8 @@ function run() {
 function getAndValidateArgs() {
     const args = {
         repoToken: core.getInput('repo-token', { required: true }),
-        staleIssueMessage: core.getInput('stale-issue-message'),
-        stalePrMessage: core.getInput('stale-pr-message'),
-        daysBeforeStale: parseInt(core.getInput('days-before-stale', { required: true })),
-        daysBeforeClose: parseInt(core.getInput('days-before-close', { required: true })),
-        staleIssueLabel: core.getInput('stale-issue-label', { required: true }),
-        exemptIssueLabels: core.getInput('exempt-issue-labels'),
-        stalePrLabel: core.getInput('stale-pr-label', { required: true }),
-        exemptPrLabels: core.getInput('exempt-pr-labels'),
-        onlyLabels: core.getInput('only-labels'),
-        operationsPerRun: parseInt(core.getInput('operations-per-run', { required: true })),
         debugOnly: core.getInput('debug-only') === 'true'
     };
-    for (const numberInput of [
-        'days-before-stale',
-        'days-before-close',
-        'operations-per-run'
-    ]) {
-        if (isNaN(parseInt(core.getInput(numberInput)))) {
-            throw Error(`input ${numberInput} did not parse to a valid integer`);
-        }
-    }
     return args;
 }
 run();
@@ -8415,177 +8396,6 @@ if (process.platform === 'linux') {
     'SIGUNUSED'
   )
 }
-
-
-/***/ }),
-
-/***/ 656:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const core = __importStar(__webpack_require__(470));
-const github = __importStar(__webpack_require__(469));
-/***
- * Handle processing of issues for staleness/closure.
- */
-class IssueProcessor {
-    constructor(options, getIssues) {
-        this.operationsLeft = 0;
-        this.staleIssues = [];
-        this.closedIssues = [];
-        this.options = options;
-        this.operationsLeft = options.operationsPerRun;
-        this.client = new github.GitHub(options.repoToken);
-        if (getIssues) {
-            this.getIssues = getIssues;
-        }
-        if (this.options.debugOnly) {
-            core.warning('Executing in debug mode. Debug output will be written but no issues will be processed.');
-        }
-    }
-    processIssues(page = 1) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.operationsLeft <= 0) {
-                core.warning('Reached max number of operations to process. Exiting.');
-                return 0;
-            }
-            // get the next batch of issues
-            const issues = yield this.getIssues(page);
-            this.operationsLeft -= 1;
-            if (issues.length <= 0) {
-                core.debug('No more issues found to process. Exiting.');
-                return this.operationsLeft;
-            }
-            for (const issue of issues.values()) {
-                const isPr = !!issue.pull_request;
-                core.debug(`Found issue: issue #${issue.number} - ${issue.title} last updated ${issue.updated_at} (is pr? ${isPr})`);
-                // calculate string based messages for this issue
-                const staleMessage = isPr
-                    ? this.options.stalePrMessage
-                    : this.options.staleIssueMessage;
-                const staleLabel = isPr
-                    ? this.options.stalePrLabel
-                    : this.options.staleIssueLabel;
-                const exemptLabels = IssueProcessor.parseCommaSeparatedString(isPr ? this.options.exemptPrLabels : this.options.exemptIssueLabels);
-                const issueType = isPr ? 'pr' : 'issue';
-                if (!staleMessage) {
-                    core.debug(`Skipping ${issueType} due to empty stale message`);
-                    continue;
-                }
-                if (exemptLabels.some((exemptLabel) => IssueProcessor.isLabeled(issue, exemptLabel))) {
-                    core.debug(`Skipping ${issueType} because it has an exempt label`);
-                    continue; // don't process exempt issues
-                }
-                if (IssueProcessor.isLabeled(issue, staleLabel)) {
-                    core.debug(`Found a stale ${issueType}`);
-                    if (this.options.daysBeforeClose >= 0 &&
-                        IssueProcessor.wasLastUpdatedBefore(issue, this.options.daysBeforeClose)) {
-                        core.debug(`Closing ${issueType} because it was last updated on ${issue.updated_at}`);
-                        yield this.closeIssue(issue);
-                        this.operationsLeft -= 1;
-                    }
-                    else {
-                        core.debug(`Ignoring stale ${issueType} because it was updated recenlty`);
-                    }
-                }
-                else if (IssueProcessor.wasLastUpdatedBefore(issue, this.options.daysBeforeStale)) {
-                    core.debug(`Marking ${issueType} stale because it was last updated on ${issue.updated_at}`);
-                    yield this.markStale(issue, staleMessage, staleLabel);
-                    this.operationsLeft -= 2;
-                }
-            }
-            // do the next batch
-            return this.processIssues(page + 1);
-        });
-    }
-    // grab issues from github in baches of 100
-    getIssues(page) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const issueResult = yield this.client.issues.listForRepo({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                state: 'open',
-                labels: this.options.onlyLabels,
-                per_page: 100,
-                page
-            });
-            return issueResult.data;
-        });
-    }
-    // Mark an issue as stale with a comment and a label
-    markStale(issue, staleMessage, staleLabel) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug(`Marking issue #${issue.number} - ${issue.title} as stale`);
-            this.staleIssues.push(issue);
-            if (this.options.debugOnly) {
-                return;
-            }
-            yield this.client.issues.createComment({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: issue.number,
-                body: staleMessage
-            });
-            yield this.client.issues.addLabels({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: issue.number,
-                labels: [staleLabel]
-            });
-        });
-    }
-    /// Close an issue based on staleness
-    closeIssue(issue) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug(`Closing issue #${issue.number} - ${issue.title} for being stale`);
-            this.closedIssues.push(issue);
-            if (this.options.debugOnly) {
-                return;
-            }
-            yield this.client.issues.update({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: issue.number,
-                state: 'closed'
-            });
-        });
-    }
-    static isLabeled(issue, label) {
-        const labelComparer = l => label.localeCompare(l.name, undefined, { sensitivity: 'accent' }) === 0;
-        return issue.labels.filter(labelComparer).length > 0;
-    }
-    static wasLastUpdatedBefore(issue, num_days) {
-        const daysInMillis = 1000 * 60 * 60 * 24 * num_days;
-        const millisSinceLastUpdated = new Date().getTime() - new Date(issue.updated_at).getTime();
-        return millisSinceLastUpdated >= daysInMillis;
-    }
-    static parseCommaSeparatedString(s) {
-        // String.prototype.split defaults to [''] when called on an empty string
-        // In this case, we'd prefer to just return an empty array indicating no labels
-        if (!s.length)
-            return [];
-        return s.split(',').map(l => l.trim());
-    }
-}
-exports.IssueProcessor = IssueProcessor;
 
 
 /***/ }),
@@ -23639,6 +23449,122 @@ module.exports = function (str) {
 
 /***/ }),
 
+/***/ 875:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const github = __importStar(__webpack_require__(469));
+const OPERATIONS_PER_RUN = 100;
+// TODO: Expose as option.
+const MIN_ISSUES_IN_MILESTONE = 3;
+/***
+ * Handle processing of issues for staleness/closure.
+ */
+class MilestoneProcessor {
+    constructor(options, getMilestones) {
+        this.operationsLeft = 0;
+        this.staleIssues = [];
+        this.closedIssues = [];
+        this.closedMilestones = [];
+        this.options = options;
+        this.operationsLeft = OPERATIONS_PER_RUN;
+        this.client = new github.GitHub(options.repoToken);
+        if (getMilestones) {
+            this.getMilestones = getMilestones;
+        }
+        if (this.options.debugOnly) {
+            core.warning('Executing in debug mode. Debug output will be written but no milestones will be processed.');
+        }
+    }
+    processMilestones(page = 1) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.operationsLeft <= 0) {
+                core.warning('Reached max number of operations to process. Exiting.');
+                return 0;
+            }
+            // get the next batch of milestones
+            const milestones = yield this.getMilestones(page);
+            this.operationsLeft -= 1;
+            if (milestones.length <= 0) {
+                core.debug('No more milestones found to process. Exiting.');
+                return this.operationsLeft;
+            }
+            for (const milestone of milestones.values()) {
+                const totalIssues = milestone.open_issues + milestone.closed_issues;
+                const { number, title } = milestone;
+                const updatedAt = milestone.updated_at;
+                const openIssues = milestone.open_issues;
+                core.debug(`Found milestone: milestone #${number} - ${title} last updated ${updatedAt}`);
+                if (totalIssues < MIN_ISSUES_IN_MILESTONE) {
+                    core.debug(`Skipping ${title} because it has less than ${MIN_ISSUES_IN_MILESTONE} issues`);
+                    continue;
+                }
+                if (openIssues > 0) {
+                    core.debug(`Skipping ${title} because it has open issues/prs`);
+                    continue;
+                }
+                // Close instantly because there isn't a good way to tag milestones
+                // and do another pass.
+                yield this.closeMilestone(milestone);
+            }
+            // do the next batch
+            return this.processMilestones(page + 1);
+        });
+    }
+    // Get issues from github in baches of 100
+    getMilestones(page) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const milestoneResult = yield this.client.issues.listMilestonesForRepo({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                state: 'open',
+                per_page: 100,
+                page
+            });
+            return milestoneResult.data;
+        });
+    }
+    /// Close an milestone
+    closeMilestone(milestone) {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug(`Closing milestone #${milestone.number} - ${milestone.title} for being stale`);
+            this.closedMilestones.push(milestone);
+            if (this.options.debugOnly) {
+                return;
+            }
+            yield this.client.issues.updateMilestone({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                milestone_number: milestone.number,
+                state: 'closed'
+            });
+        });
+    }
+}
+exports.MilestoneProcessor = MilestoneProcessor;
+
+
+/***/ }),
+
 /***/ 881:
 /***/ (function(module) {
 
@@ -24920,7 +24846,7 @@ exports.requestLog = requestLog;
 /***/ 919:
 /***/ (function(module) {
 
-module.exports = {"_from":"@octokit/rest@^16.43.1","_id":"@octokit/rest@16.43.1","_inBundle":false,"_integrity":"sha512-gfFKwRT/wFxq5qlNjnW2dh+qh74XgTQ2B179UX5K1HYCluioWj8Ndbgqw2PVqa1NnVJkGHp2ovMpVn/DImlmkw==","_location":"/@actions/github/@octokit/rest","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"@octokit/rest@^16.43.1","name":"@octokit/rest","escapedName":"@octokit%2frest","scope":"@octokit","rawSpec":"^16.43.1","saveSpec":null,"fetchSpec":"^16.43.1"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/rest/-/rest-16.43.1.tgz","_shasum":"3b11e7d1b1ac2bbeeb23b08a17df0b20947eda6b","_spec":"@octokit/rest@^16.43.1","_where":"/Users/hross/Code/stale/node_modules/@actions/github","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/rest.js/issues"},"bundleDependencies":false,"bundlesize":[{"path":"./dist/octokit-rest.min.js.gz","maxSize":"33 kB"}],"contributors":[{"name":"Mike de Boer","email":"info@mikedeboer.nl"},{"name":"Fabian Jakobs","email":"fabian@c9.io"},{"name":"Joe Gallo","email":"joe@brassafrax.com"},{"name":"Gregor Martynus","url":"https://github.com/gr2m"}],"dependencies":{"@octokit/auth-token":"^2.4.0","@octokit/plugin-paginate-rest":"^1.1.1","@octokit/plugin-request-log":"^1.0.0","@octokit/plugin-rest-endpoint-methods":"2.4.0","@octokit/request":"^5.2.0","@octokit/request-error":"^1.0.2","atob-lite":"^2.0.0","before-after-hook":"^2.0.0","btoa-lite":"^1.0.0","deprecation":"^2.0.0","lodash.get":"^4.4.2","lodash.set":"^4.3.2","lodash.uniq":"^4.5.0","octokit-pagination-methods":"^1.1.0","once":"^1.4.0","universal-user-agent":"^4.0.0"},"deprecated":false,"description":"GitHub REST API client for Node.js","devDependencies":{"@gimenete/type-writer":"^0.1.3","@octokit/auth":"^1.1.1","@octokit/fixtures-server":"^5.0.6","@octokit/graphql":"^4.2.0","@types/node":"^13.1.0","bundlesize":"^0.18.0","chai":"^4.1.2","compression-webpack-plugin":"^3.1.0","cypress":"^3.0.0","glob":"^7.1.2","http-proxy-agent":"^4.0.0","lodash.camelcase":"^4.3.0","lodash.merge":"^4.6.1","lodash.upperfirst":"^4.3.1","lolex":"^5.1.2","mkdirp":"^1.0.0","mocha":"^7.0.1","mustache":"^4.0.0","nock":"^11.3.3","npm-run-all":"^4.1.2","nyc":"^15.0.0","prettier":"^1.14.2","proxy":"^1.0.0","semantic-release":"^17.0.0","sinon":"^8.0.0","sinon-chai":"^3.0.0","sort-keys":"^4.0.0","string-to-arraybuffer":"^1.0.0","string-to-jsdoc-comment":"^1.0.0","typescript":"^3.3.1","webpack":"^4.0.0","webpack-bundle-analyzer":"^3.0.0","webpack-cli":"^3.0.0"},"files":["index.js","index.d.ts","lib","plugins"],"homepage":"https://github.com/octokit/rest.js#readme","keywords":["octokit","github","rest","api-client"],"license":"MIT","name":"@octokit/rest","nyc":{"ignore":["test"]},"publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/rest.js.git"},"scripts":{"build":"npm-run-all build:*","build:browser":"npm-run-all build:browser:*","build:browser:development":"webpack --mode development --entry . --output-library=Octokit --output=./dist/octokit-rest.js --profile --json > dist/bundle-stats.json","build:browser:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=Octokit --output-path=./dist --output-filename=octokit-rest.min.js --devtool source-map","build:ts":"npm run -s update-endpoints:typescript","coverage":"nyc report --reporter=html && open coverage/index.html","generate-bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","lint":"prettier --check '{lib,plugins,scripts,test}/**/*.{js,json,ts}' 'docs/*.{js,json}' 'docs/src/**/*' index.js README.md package.json","lint:fix":"prettier --write '{lib,plugins,scripts,test}/**/*.{js,json,ts}' 'docs/*.{js,json}' 'docs/src/**/*' index.js README.md package.json","postvalidate:ts":"tsc --noEmit --target es6 test/typescript-validate.ts","prebuild:browser":"mkdirp dist/","pretest":"npm run -s lint","prevalidate:ts":"npm run -s build:ts","start-fixtures-server":"octokit-fixtures-server","test":"nyc mocha test/mocha-node-setup.js \"test/*/**/*-test.js\"","test:browser":"cypress run --browser chrome","update-endpoints":"npm-run-all update-endpoints:*","update-endpoints:fetch-json":"node scripts/update-endpoints/fetch-json","update-endpoints:typescript":"node scripts/update-endpoints/typescript","validate:ts":"tsc --target es6 --noImplicitAny index.d.ts"},"types":"index.d.ts","version":"16.43.1"};
+module.exports = {"_args":[["@octokit/rest@16.43.1","/Users/marissa/Development/milestone-closer"]],"_from":"@octokit/rest@16.43.1","_id":"@octokit/rest@16.43.1","_inBundle":false,"_integrity":"sha512-gfFKwRT/wFxq5qlNjnW2dh+qh74XgTQ2B179UX5K1HYCluioWj8Ndbgqw2PVqa1NnVJkGHp2ovMpVn/DImlmkw==","_location":"/@actions/github/@octokit/rest","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"@octokit/rest@16.43.1","name":"@octokit/rest","escapedName":"@octokit%2frest","scope":"@octokit","rawSpec":"16.43.1","saveSpec":null,"fetchSpec":"16.43.1"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/rest/-/rest-16.43.1.tgz","_spec":"16.43.1","_where":"/Users/marissa/Development/milestone-closer","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/rest.js/issues"},"bundlesize":[{"path":"./dist/octokit-rest.min.js.gz","maxSize":"33 kB"}],"contributors":[{"name":"Mike de Boer","email":"info@mikedeboer.nl"},{"name":"Fabian Jakobs","email":"fabian@c9.io"},{"name":"Joe Gallo","email":"joe@brassafrax.com"},{"name":"Gregor Martynus","url":"https://github.com/gr2m"}],"dependencies":{"@octokit/auth-token":"^2.4.0","@octokit/plugin-paginate-rest":"^1.1.1","@octokit/plugin-request-log":"^1.0.0","@octokit/plugin-rest-endpoint-methods":"2.4.0","@octokit/request":"^5.2.0","@octokit/request-error":"^1.0.2","atob-lite":"^2.0.0","before-after-hook":"^2.0.0","btoa-lite":"^1.0.0","deprecation":"^2.0.0","lodash.get":"^4.4.2","lodash.set":"^4.3.2","lodash.uniq":"^4.5.0","octokit-pagination-methods":"^1.1.0","once":"^1.4.0","universal-user-agent":"^4.0.0"},"description":"GitHub REST API client for Node.js","devDependencies":{"@gimenete/type-writer":"^0.1.3","@octokit/auth":"^1.1.1","@octokit/fixtures-server":"^5.0.6","@octokit/graphql":"^4.2.0","@types/node":"^13.1.0","bundlesize":"^0.18.0","chai":"^4.1.2","compression-webpack-plugin":"^3.1.0","cypress":"^3.0.0","glob":"^7.1.2","http-proxy-agent":"^4.0.0","lodash.camelcase":"^4.3.0","lodash.merge":"^4.6.1","lodash.upperfirst":"^4.3.1","lolex":"^5.1.2","mkdirp":"^1.0.0","mocha":"^7.0.1","mustache":"^4.0.0","nock":"^11.3.3","npm-run-all":"^4.1.2","nyc":"^15.0.0","prettier":"^1.14.2","proxy":"^1.0.0","semantic-release":"^17.0.0","sinon":"^8.0.0","sinon-chai":"^3.0.0","sort-keys":"^4.0.0","string-to-arraybuffer":"^1.0.0","string-to-jsdoc-comment":"^1.0.0","typescript":"^3.3.1","webpack":"^4.0.0","webpack-bundle-analyzer":"^3.0.0","webpack-cli":"^3.0.0"},"files":["index.js","index.d.ts","lib","plugins"],"homepage":"https://github.com/octokit/rest.js#readme","keywords":["octokit","github","rest","api-client"],"license":"MIT","name":"@octokit/rest","nyc":{"ignore":["test"]},"publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/rest.js.git"},"scripts":{"build":"npm-run-all build:*","build:browser":"npm-run-all build:browser:*","build:browser:development":"webpack --mode development --entry . --output-library=Octokit --output=./dist/octokit-rest.js --profile --json > dist/bundle-stats.json","build:browser:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=Octokit --output-path=./dist --output-filename=octokit-rest.min.js --devtool source-map","build:ts":"npm run -s update-endpoints:typescript","coverage":"nyc report --reporter=html && open coverage/index.html","generate-bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","lint":"prettier --check '{lib,plugins,scripts,test}/**/*.{js,json,ts}' 'docs/*.{js,json}' 'docs/src/**/*' index.js README.md package.json","lint:fix":"prettier --write '{lib,plugins,scripts,test}/**/*.{js,json,ts}' 'docs/*.{js,json}' 'docs/src/**/*' index.js README.md package.json","postvalidate:ts":"tsc --noEmit --target es6 test/typescript-validate.ts","prebuild:browser":"mkdirp dist/","pretest":"npm run -s lint","prevalidate:ts":"npm run -s build:ts","start-fixtures-server":"octokit-fixtures-server","test":"nyc mocha test/mocha-node-setup.js \"test/*/**/*-test.js\"","test:browser":"cypress run --browser chrome","update-endpoints":"npm-run-all update-endpoints:*","update-endpoints:fetch-json":"node scripts/update-endpoints/fetch-json","update-endpoints:typescript":"node scripts/update-endpoints/typescript","validate:ts":"tsc --target es6 --noImplicitAny index.d.ts"},"types":"index.d.ts","version":"16.43.1"};
 
 /***/ }),
 

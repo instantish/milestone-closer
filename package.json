@@ -1,8 +1,8 @@
 {
-  "name": "stale-action",
-  "version": "2.0.0",
+  "name": "milestone-closer",
+  "version": "1.0.0",
   "private": true,
-  "description": "Marks old issues and PRs as stale",
+  "description": "Closes finished milestones",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/stale.git"
+    "url": "git+https://github.com/instantish/milestone-closer.git"
   },
   "keywords": [
     "actions",
     "node",
-    "stale"
+    "milestone"
   ],
-  "author": "GitHub",
+  "author": "Instantish",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.3",

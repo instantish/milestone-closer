@@ -1,10 +1,10 @@
-# Close Stale Issues and PRs
+# Close milestones that are done
 
-Warns and then closes issues and PRs that have had no activity for a specified amount of time.
+Automatically closes milestones that have more than 3 issues/prs and all issues/prs are marked closed.
 
 ### Building and testing
 
-Install the dependencies  
+Install the dependencies
 ```bash
 $ npm install
 ```
@@ -14,7 +14,7 @@ Build the typescript and package it for distribution
 $ npm run build && npm run pack
 ```
 
-Run the tests :heavy_check_mark:  
+Run the tests :heavy_check_mark:
 ```bash
 $ npm test
 ```
@@ -22,64 +22,21 @@ $ npm test
 ### Usage
 
 See [action.yml](./action.yml) For comprehensive list of options.
- 
+
 Basic:
 ```yaml
-name: "Close stale issues"
+name: "Close finished milestones"
 on:
   schedule:
   - cron: "0 0 * * *"
 
 jobs:
-  stale:
+  milestone-closer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v1.1.0
+    - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Message to comment on stale issues. If none provided, will not mark issues stale'
-        stale-pr-message: 'Message to comment on stale PRs. If none provided, will not mark PRs stale'
-```
- 
-Configure stale timeouts:
-```yaml
-name: "Close stale issues"
-on:
-  schedule:
-  - cron: "0 0 * * *"
-
-jobs:
-  stale:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/stale@v1.1.0
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'This issue is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
-        days-before-stale: 30
-        days-before-close: 5
-```
- 
-Configure labels:
-```yaml
-name: "Close stale issues"
-on:
-  schedule:
-  - cron: "0 0 * * *"
-
-jobs:
-  stale:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/stale@v1.1.0
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale issue message'
-        stale-issue-label: 'no-issue-activity'
-        exempt-issue-labels: 'awaiting-approval,work-in-progress'
-        stale-pr-label: 'no-pr-activity'
-        exempt-pr-labels: 'awaiting-approval,work-in-progress'
 ```
 
 ### Debugging
