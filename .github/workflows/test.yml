@@ -21,4 +21,3 @@ jobs:
     - uses: ./
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        debug-only: true
