@@ -1,5 +1,5 @@
-name: 'Close finished milestones'
-description: 'Automatically closes milestones that have no more open issues/PRs.'
+name: 'Close milestones that are at 100%'
+description: 'Automatically closes milestones that have no more open issues/PRs ✨'
 author: 'Instantish'
 inputs:
   repo-token:
