@@ -45,7 +45,7 @@ To see debug ouput from this action, you must set the secret `ACTIONS_STEP_DEBUG
 
 ### More Resources
 
-For more resources or tools to make issue tracking easier, checkout out [Instantish](https://itsinstantish.com) ⚡️
+For more resources or tools to make issue tracking easier, check out [Instantish](https://itsinstantish.com) ⚡️
 
 If you have questions about setting this up, feel free to reach out to hi@itsinstantish.com with subject line "Question about GitHub Action" 😊
 
