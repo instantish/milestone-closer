@@ -27,12 +27,6 @@ See [action.yml](./action.yml) for the full list of options.
 
 To see debug ouput from this action, you must set the secret `ACTIONS_STEP_DEBUG` to `true` in your repository. You can run this action in debug only mode (no actions will be taken on your milestones) by passing `debug-only` `true` as an argument to the action.
 
-### More Resources
-
-For more resources or tools to make issue tracking easier, check out [Instantish](https://itsinstantish.com) ⚡️
-
-If you have questions about setting this up, feel free to reach out to hi@itsinstantish.com with subject line "Question about GitHub Action" 😊
-
 ### Building and testing
 
 Install the dependencies
@@ -49,3 +43,9 @@ Run the tests :heavy_check_mark:
 ```bash
 $ npm test
 ```
+
+### More Resources
+
+For more resources or tools to make issue tracking easier, check out [Instantish](https://itsinstantish.com) ⚡️
+
+If you have questions about setting this up, feel free to reach out to hi@itsinstantish.com with subject line "Question about GitHub Action" 😊
