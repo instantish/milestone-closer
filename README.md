@@ -2,23 +2,6 @@
 
 Automatically closes milestones that have more than 3 issues/prs and all issues/prs are marked closed.
 
-### Building and testing
-
-Install the dependencies
-```bash
-$ npm install
-```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run pack
-```
-
-Run the tests :heavy_check_mark:
-```bash
-$ npm test
-```
-
 ### Usage
 
 See [action.yml](./action.yml) For comprehensive list of options.
@@ -49,3 +32,19 @@ For more resources or tools to make issue tracking easier, check out [Instantish
 
 If you have questions about setting this up, feel free to reach out to hi@itsinstantish.com with subject line "Question about GitHub Action" 😊
 
+### Building and testing
+
+Install the dependencies
+```bash
+$ npm install
+```
+
+Build the typescript and package it for distribution
+```bash
+$ npm run build && npm run pack
+```
+
+Run the tests :heavy_check_mark:
+```bash
+$ npm test
+```
