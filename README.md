@@ -4,7 +4,7 @@ Automatically closes milestones that have more than 3 issues/prs and all issues/
 
 ### Usage
 
-See [action.yml](./action.yml) For comprehensive list of options.
+See [action.yml](./action.yml) for the full list of options.
 
 Basic:
 ```yaml
