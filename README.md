@@ -34,7 +34,7 @@ jobs:
   milestone-closer:
     runs-on: ubuntu-latest
     steps:
-    - uses: instantish/milestone-closer@v1.1.0
+    - uses: instantish/milestone-closer@v1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
