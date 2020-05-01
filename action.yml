@@ -1,6 +1,9 @@
 name: 'Close finished milestones'
 description: 'Automatically closes milestones that have no more open issues/PRs.'
 author: 'Instantish'
+branding:
+  icon: 'book'  
+  color: 'green'
 inputs:
   repo-token:
     description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
