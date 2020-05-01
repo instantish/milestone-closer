@@ -4,14 +4,12 @@ Automatically closes milestones that have more than 3 issues/prs and all issues/
 
 ### Usage
 
-See [action.yml](./action.yml) for the full list of options.
-
-Basic:
+Basic (runs every 20 minutes):
 ```yaml
 name: "Close finished milestones"
 on:
   schedule:
-  - cron: "0 0 * * *"
+  - cron: "*/20 * * * *"
 
 jobs:
   milestone-closer:
@@ -22,9 +20,12 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+
+See [action.yml](./action.yml) for the full list of options.
+
 ### Debugging
 
-To see debug ouput from this action, you must set the secret `ACTIONS_STEP_DEBUG` to `true` in your repository. You can run this action in debug only mode (no actions will be taken on your issues) by passing `debug-only` `true` as an argument to the action.
+To see debug ouput from this action, you must set the secret `ACTIONS_STEP_DEBUG` to `true` in your repository. You can run this action in debug only mode (no actions will be taken on your milestones) by passing `debug-only` `true` as an argument to the action.
 
 ### More Resources
 
