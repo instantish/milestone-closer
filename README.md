@@ -42,3 +42,10 @@ jobs:
 ### Debugging
 
 To see debug ouput from this action, you must set the secret `ACTIONS_STEP_DEBUG` to `true` in your repository. You can run this action in debug only mode (no actions will be taken on your issues) by passing `debug-only` `true` as an argument to the action.
+
+### More Resources
+
+For more resources or tools to make issue tracking easier, checkout out [Instantish](https://itsinstantish.com) ⚡️
+
+If you have questions about setting this up, feel free to reach out to hi@itsinstantish.com with subject line "Question about GitHub Action" 😊
+
