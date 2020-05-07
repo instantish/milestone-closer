@@ -24,7 +24,7 @@ Runs on issue and PR updates:
 ```yaml
 name: "Close finished milestones"
 on:
-  issue:
+  issues:
     types: [opened, deleted, closed, reopened, milestoned, demilestoned, transferred]
   pull_request:
     types: [opened, closed, reopened, milestoned, demilestoned]
