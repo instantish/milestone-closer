@@ -38,8 +38,6 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-
-
 See [action.yml](./action.yml) for the full list of options.
 
 ### Debugging
