@@ -25,7 +25,7 @@ Runs on issue and PR updates:
 name: "Close finished milestones"
 on:
   issues:
-    types: [opened, deleted, closed, reopened, milestoned, demilestoned, transferred]
+    types: [opened, deleted, closed, reopened, milestoned, demilestoned]
   pull_request:
     types: [opened, closed, reopened, milestoned, demilestoned]
 
