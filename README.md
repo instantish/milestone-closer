@@ -20,6 +20,25 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+Runs on issue and PR updates:
+```yaml
+name: "Close finished milestones"
+on:
+  issue:
+    types: [opened, deleted, closed, reopened, milestoned, demilestoned, transferred]
+  pull_request:
+    types: [opened, closed, reopened, milestoned, demilestoned]
+
+jobs:
+  milestone-closer:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: instantish/milestone-closer@v1.1.0
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+
 
 See [action.yml](./action.yml) for the full list of options.
 
