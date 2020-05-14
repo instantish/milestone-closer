@@ -1,13 +1,10 @@
+import { MilestoneProcessorOptions } from './interfaces';
 import * as core from '@actions/core';
-import {
-  MilestoneProcessor,
-  MilestoneProcessorOptions
-} from './MilestoneProcessor';
+import { MilestoneProcessor } from './MilestoneProcessor';
 
 async function run(): Promise<void> {
   try {
     const args = getAndValidateArgs();
-
     const processor: MilestoneProcessor = new MilestoneProcessor(args);
     await processor.processMilestones();
   } catch (error) {
@@ -18,8 +15,11 @@ async function run(): Promise<void> {
 
 function getAndValidateArgs(): MilestoneProcessorOptions {
   const args = {
-    repoToken: core.getInput('repo-token', {required: true}),
-    debugOnly: core.getInput('debug-only') === 'true'
+    repoToken: core.getInput('repo-token', { required: true }),
+    minimumIssues: core.getInput('minimum-issues') || '4',
+    relatedOnly: core.getInput('related-only') === 'true',
+    relatedActive: core.getInput('related-active') === 'true',
+    debugOnly: core.getInput('debug-only') === 'true',
   };
   return args;
 }

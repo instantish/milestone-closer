@@ -1,13 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {Octokit} from '@octokit/rest';
-
-import {
-  MilestoneProcessor,
-  Issue,
-  Milestone,
-  MilestoneProcessorOptions
-} from '../src/MilestoneProcessor';
+import { Octokit } from '@octokit/rest';
+import { Issue, Milestone, ActionEvent, MilestoneProcessorOptions } from './../src/interfaces';
+import { MilestoneProcessor } from '../src/MilestoneProcessor';
 
 function generateIssue(
   id: number,
@@ -21,7 +16,7 @@ function generateIssue(
   return {
     number: id,
     labels: labels.map(l => {
-      return {name: l};
+      return { name: l };
     }),
     title: title,
     updated_at: updatedAt,
@@ -53,9 +48,30 @@ function generateMilestone(
   };
 }
 
+function generateEvent(
+  id: number,
+  event: string,
+  nodeId: string,
+  commitId: string,
+  createdAt: string,
+  // isClosed: boolean = false
+): ActionEvent {
+  return {
+    id: id,
+    event: event,
+    node_id: nodeId,
+    commit_id: commitId,
+    created_at: createdAt,
+    //   state: isClosed ? 'closed' : 'open'
+  };
+}
+
 const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
-  debugOnly: true
+  minimumIssues: '3',
+  relatedOnly: false,
+  relatedActive: false,
+  debugOnly: true,
 };
 
 test('empty milestone list results in 1 operation', async () => {
@@ -162,3 +178,30 @@ test('processing a milestone with only a few issues will not close it', async ()
 
   expect(processor.closedMilestones.length).toEqual(0);
 });
+
+test('processing a milestone depending on the pr assigned to it, will close it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'How was it 958?',
+      'Sprinted',
+      '2020-01-01T17:00:00Z',
+      0,
+      3
+    )
+  ];
+
+  DefaultProcessorOptions.relatedOnly = true;
+
+  const processor = new MilestoneProcessor(
+    DefaultProcessorOptions,
+    async p => p == 1 ? TestMilestoneList : []
+  );
+
+  // process our fake list
+  await processor.processMilestones(1);
+
+  expect(processor.closedMilestones.length).toEqual(1);
+});
+

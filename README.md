@@ -18,6 +18,8 @@ jobs:
     - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+        minimum-issues: "3"
+        related-only: false
 ```
 
 Runs on issue and PR updates:
@@ -36,6 +38,8 @@ jobs:
     - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+        minimum-issues: "3"
+        related-only: true
 ```
 
 See [action.yml](./action.yml) for the full list of options.

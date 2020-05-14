@@ -1,3 +1,9 @@
+# Files
 .DS_Store
+
+# Folders
 lib/
+node_modules/
 __tests__/runner/*
+.vscode/
+.idea/

@@ -1,0 +1,26 @@
+name: "On Events"
+on: # rebuild any PRs and main branch changes
+  issues:
+    types: [opened, deleted, closed, reopened, milestoned, demilestoned]
+  pull_request:
+    types: [opened, closed, reopened, milestoned, demilestoned]
+  push:
+    branches:
+      - master
+      - "releases/*"
+
+jobs:
+  milestone-closer: # builds and runs the tests afterwards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # - run: |
+      #     npm install
+      #     npm run build
+      #     npm run pack
+      - uses: ./
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          minimum-issues: "2"
+          related-only: true
+          debug-only: false
