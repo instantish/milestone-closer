@@ -61,7 +61,6 @@ function generateEvent(
     node_id: nodeId,
     commit_id: commitId,
     created_at: createdAt,
-    //   state: isClosed ? 'closed' : 'open'
   };
 }
 
