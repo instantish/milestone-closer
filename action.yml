@@ -9,7 +9,7 @@ inputs:
     description: "Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`."
     required: true
   minimum-issues:
-    description: "Check milestones that contains the minimum issues count, otherwise ignore it moving to the next."
+    description: "Check milestones that contain the minimum issues count, otherwise ignore it moving to the next."
     default: "3"
   related-only:
     description: "Targets only the milestone connected to the current triggered event/action to process it."

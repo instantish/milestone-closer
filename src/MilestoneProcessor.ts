@@ -84,7 +84,7 @@ export class MilestoneProcessor {
 
       core.debug(`Found milestone: #${number} - "${title}", last updated: ${updatedAt}`);
 
-      if (totalIssues < +this.options.minimumIssues) {
+      if (totalIssues < this.options.minimumIssues) {
         core.debug(`Skipping milestone: "${title}" because it has less than: ${this.options.minimumIssues} issues`);
         continue;
       }
