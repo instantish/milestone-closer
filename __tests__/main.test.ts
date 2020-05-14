@@ -54,7 +54,6 @@ function generateEvent(
   nodeId: string,
   commitId: string,
   createdAt: string,
-  // isClosed: boolean = false
 ): ActionEvent {
   return {
     id: id,
@@ -204,4 +203,3 @@ test('processing a milestone depending on the pr assigned to it, will close it',
 
   expect(processor.closedMilestones.length).toEqual(1);
 });
-
