@@ -1,3 +1,5 @@
+[![instantish](https://github.com/jxdv/milestone-closer/blob/files/Banner.png?raw=true)](https://www.itsinstantish.com/)
+
 # Close milestones that are done
 
 Automatically closes milestones that have more than 3 issues/prs and all issues/prs are marked closed.
