@@ -1,4 +1,4 @@
-name: "Close finished milestones automatically"
+name: "Close / Open milestones automatically"
 on:
   schedule:
     - cron: "0 0 * * *"
@@ -14,6 +14,7 @@ jobs:
         # reminder: this uses the previously generated index.js in dist/
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          minimum-issues: "3"
+          minimum-issues: 3
           related-only: false
-          debug-only: true
+          reopen-active: true
+          debug-only: false

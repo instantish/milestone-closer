@@ -10,9 +10,12 @@ inputs:
     required: true
   minimum-issues:
     description: "Check milestones that contain the minimum issues count, otherwise ignore it moving to the next."
-    default: "3"
+    default: 3
   related-only:
     description: "Targets only the milestone connected to the current triggered event/action to process it."
+    default: false
+  reopen-active:
+    description: "Reopens milestones that have re/opened issues added to them."
     default: false
   debug-only:
     description: "Run the processor in debug mode without actually performing any operations on live milestones."

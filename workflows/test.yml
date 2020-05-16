@@ -21,7 +21,8 @@ jobs:
       - uses: ./
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          minimum-issues: "3"
+          minimum-issues: 3
           related-only: false
+          reopen-active: true
           # related-active: false
           debug-only: true

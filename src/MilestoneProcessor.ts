@@ -21,6 +21,7 @@ export class MilestoneProcessor {
   readonly staleIssues: Issue[] = [];
   readonly closedIssues: Issue[] = [];
   readonly closedMilestones: Milestone[] = [];
+  readonly reopenedMilestones: Milestone[] = [];
   readonly closedEvents: ActionEvent[] = [];
 
   private operationsLeft: number = 0;
@@ -36,7 +37,7 @@ export class MilestoneProcessor {
     this.options = options;
     this.operationsLeft = OPERATIONS_PER_RUN;
     this.client = new github.GitHub(options.repoToken);
-    this.detectedEvent = process.env.GITHUB_EVENT_NAME;
+    this.detectedEvent = github.context.eventName;
     this.eventPullRequest = (this.options.debugOnly ? this.options.relatedOnly : this.getCheckPullRequest(github.context));
     this.eventPush = (this.options.debugOnly ? this.options.relatedOnly : this.getCheckPush(github.context));
 
@@ -60,18 +61,18 @@ export class MilestoneProcessor {
 
     this.operationsLeft -= 1;
 
-    if (milestones.length <= 0) {
+    if (milestones.length <= 0 && !this.options.reopenActive) {
       core.debug('No more milestones found to process. Exiting.');
       return this.operationsLeft;
     }
 
-    if ((this.options.relatedOnly || this.options.relatedActive) && this.operationsLeft < (OPERATIONS_PER_RUN - 1)) {
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.operationsLeft < (OPERATIONS_PER_RUN - 1) && !this.options.reopenActive) {
       core.debug('Passing milestone last check. Exiting.');
       return this.operationsLeft;
     }
 
     // for later prep: to add "this.eventPullRequest" for PR
-    if ((this.options.relatedOnly || this.options.relatedActive) && this.relatedNotFound) {
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.relatedNotFound && !this.options.reopenActive) {
       core.debug('Related Milestone not found. While related-only is enabled. Exiting.');
       return this.operationsLeft;
     }
@@ -84,19 +85,27 @@ export class MilestoneProcessor {
 
       core.debug(`Found milestone: #${number} - "${title}", last updated: ${updatedAt}`);
 
+      // Open closed open milestone
+      if (milestone.state === "closed" && this.options.reopenActive && openIssues > 0) {
+        await this.openMilestone(milestone);
+        continue;
+      }
+
       if (totalIssues < this.options.minimumIssues) {
         core.debug(`Skipping milestone: "${title}" because it has less than: ${this.options.minimumIssues} issues`);
         continue;
       }
 
-      if (openIssues > 0) {
+      if (milestone.state === "open" && openIssues > 0) {
         core.debug(`Skipping milestone: "${title}" because it has open issues/prs`);
         continue;
       }
 
-      // Close instantly because there isn't a good way to tag milestones
+      // Close open milestone instantly because there isn't a good way to tag milestones
       // and do another pass.
-      await this.closeMilestone(milestone);
+      if (milestone.state === "open") {
+        await this.closeMilestone(milestone);
+      }
     }
 
     // do the next batch
@@ -123,6 +132,7 @@ export class MilestoneProcessor {
     let milestonesSelfResult: Milestone[] = [];
     let milestonesPullsResult: Milestone[] = [];
     let milestonesIssuesResult: Milestone[] = [];
+    let allClosedMilestoneResultValues: Milestone[] = [];
 
     // Checks if related-only is true
     // for later prep: (if this is a pull request to get the milestone specified)
@@ -199,7 +209,19 @@ export class MilestoneProcessor {
         per_page: 100,
         page
       });
-      milestonesResult = allMilestoneResult.data;
+
+      if (this.options.reopenActive) {
+        const allClosedMilestoneResult = await this.client.issues.listMilestonesForRepo({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          state: 'closed',
+          per_page: 100,
+          page
+        });
+        allClosedMilestoneResultValues = allClosedMilestoneResult.data;
+      }
+
+      milestonesResult = [...new Set([...allMilestoneResult.data, ...allClosedMilestoneResultValues])];
 
     }
 
@@ -226,6 +248,25 @@ export class MilestoneProcessor {
       page
     });
     return allMilestoneResult;
+  }
+
+  /// Reopen a milestone
+  private async openMilestone(milestone: Milestone): Promise<void> {
+
+    core.info(`Reopening closed milestone #${milestone.number} - "${milestone.title}" (${this.options.debugOnly}) for detected activity`);
+
+    this.reopenedMilestones.push(milestone);
+
+    if (this.options.debugOnly) {
+      return;
+    }
+
+    await this.client.issues.updateMilestone({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      milestone_number: milestone.number,
+      state: 'open'
+    });
   }
 
   /// Close a milestone

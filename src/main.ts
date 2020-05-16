@@ -16,9 +16,10 @@ async function run(): Promise<void> {
 function getAndValidateArgs(): MilestoneProcessorOptions {
   const args = {
     repoToken: core.getInput('repo-token', { required: true }),
-    minimumIssues: core.getInput('minimum-issues') || '4',
+    minimumIssues: core.getInput('minimum-issues') as unknown as number,
     relatedOnly: core.getInput('related-only') === 'true',
     relatedActive: core.getInput('related-active') === 'true',
+    reopenActive: core.getInput('reopen-active') === 'true',
     debugOnly: core.getInput('debug-only') === 'true',
   };
   return args;
