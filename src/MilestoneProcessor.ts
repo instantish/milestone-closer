@@ -1,8 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {Octokit} from '@octokit/rest';
-import { Context } from '@actions/github/lib/context';
-import { WebhookPayload } from '@actions/github/lib/interfaces';
+import { Octokit } from '@octokit/rest';
 
 type OctoKitIssueList = Octokit.Response<Octokit.IssuesListForRepoResponse>;
 type OctoKitMilestoneList = Octokit.Response<
@@ -99,7 +97,7 @@ export class MilestoneProcessor {
 
     for (const milestone of milestones.values()) {
       const totalIssues = milestone.open_issues + milestone.closed_issues;
-      const {number, title} = milestone;
+      const { number, title } = milestone;
       const updatedAt = milestone.updated_at;
       const openIssues = milestone.open_issues;
 
@@ -111,7 +109,7 @@ export class MilestoneProcessor {
         continue;
       }
 
-     if (totalIssues < MIN_ISSUES_IN_MILESTONE) {
+      if (totalIssues < MIN_ISSUES_IN_MILESTONE) {
         core.debug(
           `Skipping ${title} because it has less than ${MIN_ISSUES_IN_MILESTONE} issues`
         );
@@ -137,32 +135,30 @@ export class MilestoneProcessor {
   // Get issues from github in baches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
 
-    const currentPayload: WebhookPayload | any = github.context.payload;
     let milestonesResult: Milestone[] = [];
     let allClosedMilestoneResultValues: Milestone[] = [];
 
-  core.debug("Getting all Milestones");
-  const allMilestoneResult: OctoKitMilestoneList = await this.client.issues.listMilestonesForRepo({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    state: 'open',
-    per_page: 100,
-    page
-  });
-
-  if (this.options.reopenActive) {
-    const allClosedMilestoneResult = await this.client.issues.listMilestonesForRepo({
+    core.debug("Getting all Milestones");
+    const allMilestoneResult: OctoKitMilestoneList = await this.client.issues.listMilestonesForRepo({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      state: 'closed',
+      state: 'open',
       per_page: 100,
       page
     });
-    allClosedMilestoneResultValues = allClosedMilestoneResult.data;
-  }
 
-  milestonesResult = [...new Set([...allMilestoneResult.data, ...allClosedMilestoneResultValues])];
+    if (this.options.reopenActive) {
+      const allClosedMilestoneResult = await this.client.issues.listMilestonesForRepo({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        state: 'closed',
+        per_page: 100,
+        page
+      });
+      allClosedMilestoneResultValues = allClosedMilestoneResult.data;
+    }
 
+    milestonesResult = [...new Set([...allMilestoneResult.data, ...allClosedMilestoneResultValues])];
 
     return milestonesResult;
   }
