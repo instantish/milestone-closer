@@ -23518,8 +23518,6 @@ class MilestoneProcessor {
         this.closedIssues = [];
         this.closedMilestones = [];
         this.reopenedMilestones = [];
-        this.getCheckPullRequest = (context) => 'pull_request' === context.eventName;
-        this.getCheckPush = (context) => 'push' === context.eventName;
         this.options = options;
         this.operationsLeft = OPERATIONS_PER_RUN;
         this.client = new github.GitHub(options.repoToken);
@@ -23547,18 +23545,13 @@ class MilestoneProcessor {
                 core.debug('Passing milestone last check. Exiting.');
                 return this.operationsLeft;
             }
-            // for later prep: to add "this.eventPullRequest" for PR
-            if (this.relatedNotFound && !this.options.reopenActive) {
-                core.debug('Related Milestone not found. While related-only is enabled. Exiting.');
-                return this.operationsLeft;
-            }
             for (const milestone of milestones.values()) {
                 const totalIssues = milestone.open_issues + milestone.closed_issues;
                 const { number, title } = milestone;
                 const updatedAt = milestone.updated_at;
                 const openIssues = milestone.open_issues;
                 core.debug(`Found milestone: #${number} - "${title}", last updated: ${updatedAt}`);
-                // Open closed open milestone
+                // Open closed milestone
                 if (milestone.state === "closed" && this.options.reopenActive && openIssues > 0) {
                     yield this.openMilestone(milestone);
                     continue;
@@ -23571,7 +23564,7 @@ class MilestoneProcessor {
                     core.debug(`Skipping milestone: "${title}" because it has open issues/prs`);
                     continue;
                 }
-                // Close open milestone instantly because there isn't a good way to tag milestones
+                // Close opened milestone instantly because there isn't a good way to tag milestones
                 // and do another pass.
                 if (milestone.state === "open") {
                     yield this.closeMilestone(milestone);
@@ -23581,19 +23574,9 @@ class MilestoneProcessor {
             return this.processMilestones(page + 1);
         });
     }
-    emptyObject(object) {
-        if (object instanceof Array) {
-            return object === undefined || object.length == 0;
-        }
-        else {
-            return Object.keys(object).length <= 0;
-        }
-    }
-    ;
     // Get issues from github in baches of 100
     getMilestones(page) {
         return __awaiter(this, void 0, void 0, function* () {
-            const currentPayload = github.context.payload;
             let milestonesResult = [];
             let allClosedMilestoneResultValues = [];
             core.debug("Getting all Milestones");
@@ -23615,7 +23598,6 @@ class MilestoneProcessor {
                 allClosedMilestoneResultValues = allClosedMilestoneResult.data;
             }
             milestonesResult = [...new Set([...allMilestoneResult.data, ...allClosedMilestoneResultValues])];
-            // core.debug(JSON.stringify(milestonesResult));
             return milestonesResult;
         });
     }
