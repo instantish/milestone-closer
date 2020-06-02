@@ -1,25 +1,16 @@
-name: "Close finished milestones - by Instantish"
-description: "Automatically closes milestones that have no more open issues/PRs ✨"
-author: "Instantish"
+name: 'Close milestones that are at 100%'
+description: 'Automatically closes milestones that have no more open issues/PRs ✨'
+author: 'Instantish'
 branding:
-  icon: "check"
-  color: "gray-dark"
+  icon: 'book'  
+  color: 'green'
 inputs:
   repo-token:
-    description: "Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`."
+    description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
     required: true
-  minimum-issues:
-    description: "Check milestones that contain the minimum issues count, otherwise ignore it moving to the next."
-    default: 3
-  related-only:
-    description: "Targets only the milestone connected to the current triggered event/action to process it."
-    default: false
-  reopen-active:
-    description: "Reopens milestones that have re/opened issues added to them."
-    default: false
   debug-only:
-    description: "Run the processor in debug mode without actually performing any operations on live milestones."
+    description: 'Run the processor in debug mode without actually performing any operations on live milestones.'
     default: false
 runs:
-  using: "node12"
-  main: "dist/index.js"
+  using: 'node12'
+  main: 'dist/index.js'

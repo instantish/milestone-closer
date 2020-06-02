@@ -1,5 +1,3 @@
-[![instantish](https://raw.githubusercontent.com/jxdv/milestone-closer/master/src/media/banner.png)](https://www.itsinstantish.com/)
-
 # Close milestones that are done
 
 Automatically closes milestones that have more than 3 issues/prs and all issues/prs are marked closed.
@@ -20,9 +18,6 @@ jobs:
     - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        minimum-issues: 3
-        related-only: false
-        reopen-active: true
 ```
 
 Runs on issue and PR updates:
@@ -41,9 +36,6 @@ jobs:
     - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        minimum-issues: 3
-        related-only: true
-        reopen-active: true
 ```
 
 See [action.yml](./action.yml) for the full list of options.

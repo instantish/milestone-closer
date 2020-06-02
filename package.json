@@ -11,7 +11,6 @@
     "lint": "eslint src/**/*.ts",
     "pack": "ncc build",
     "test": "jest",
-    "debug": "npm run build && npm run pack && npm test",
     "all": "npm run build && npm run format && npm run lint && npm run pack && npm test"
   },
   "repository": {
