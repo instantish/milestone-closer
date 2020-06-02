@@ -1,11 +1,14 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {Octokit} from '@octokit/rest';
+import { Context } from '@actions/github/lib/context';
+import { WebhookPayload } from '@actions/github/lib/interfaces';
 
 type OctoKitIssueList = Octokit.Response<Octokit.IssuesListForRepoResponse>;
 type OctoKitMilestoneList = Octokit.Response<
   Octokit.IssuesListMilestonesForRepoResponse
 >;
+type OctoKitCommitsPullsList = Octokit.Response<Octokit.ReposListPullRequestsAssociatedWithCommitResponse>;
 
 const OPERATIONS_PER_RUN = 100;
 // TODO: Expose as option.
@@ -38,6 +41,8 @@ export interface Label {
 
 export interface MilestoneProcessorOptions {
   repoToken: string;
+  relatedOnly: boolean;
+  relatedActive: boolean;
   debugOnly: boolean;
 }
 
@@ -48,10 +53,15 @@ export class MilestoneProcessor {
   readonly client: github.GitHub;
   readonly options: MilestoneProcessorOptions;
   private operationsLeft: number = 0;
+  private relatedNotFound: boolean = false;
+  private eventPullRequest: boolean = false;
+  private eventPush: boolean = false;
 
   readonly staleIssues: Issue[] = [];
   readonly closedIssues: Issue[] = [];
   readonly closedMilestones: Milestone[] = [];
+
+
 
   constructor(
     options: MilestoneProcessorOptions,
@@ -89,13 +99,13 @@ export class MilestoneProcessor {
       return this.operationsLeft;
     }
 
-    if ((this.options.relatedOnly || this.options.relatedActive) && this.operationsLeft < (OPERATIONS_PER_RUN - 1) && !this.options.reopenActive) {
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.operationsLeft < (OPERATIONS_PER_RUN - 1)) {
       core.debug('Passing milestone last check. Exiting.');
       return this.operationsLeft;
     }
 
     // for later prep: to add "this.eventPullRequest" for PR
-    if ((this.options.relatedOnly || this.options.relatedActive) && this.relatedNotFound && !this.options.reopenActive) {
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.relatedNotFound) {
       core.debug('Related Milestone not found. While related-only is enabled. Exiting.');
       return this.operationsLeft;
     }
@@ -129,6 +139,18 @@ export class MilestoneProcessor {
     return this.processMilestones(page + 1);
   }
 
+  private getCheckPullRequest = (context: Context): boolean => 'pull_request' === context.eventName;
+
+  private getCheckPush = (context: Context): boolean => 'push' === context.eventName;
+
+  private emptyObject(object: Object | Array<any>): boolean {
+    if (object instanceof Array) {
+      return object === undefined || object.length == 0;
+    } else {
+      return Object.keys(object).length <= 0;
+    }
+  };
+  
   // Get issues from github in baches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
 
@@ -214,9 +236,6 @@ export class MilestoneProcessor {
 
     // core.debug(JSON.stringify(milestonesResult));
     return milestonesResult;
-  }
-
-    return milestoneResult.data;
   }
 
   /// Close an milestone
