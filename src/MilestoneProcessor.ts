@@ -38,6 +38,7 @@ export interface Label {
 
 export interface MilestoneProcessorOptions {
   repoToken: string;
+  minimumIssues: number;
   debugOnly: boolean;
 }
 
