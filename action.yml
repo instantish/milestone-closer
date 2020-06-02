@@ -8,6 +8,9 @@ inputs:
   repo-token:
     description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
     required: true
+  minimum-issues:
+    description: "Check milestones that contain the minimum issues count, otherwise ignore it moving to the next."
+    default: 3
   debug-only:
     description: 'Run the processor in debug mode without actually performing any operations on live milestones.'
     default: false
