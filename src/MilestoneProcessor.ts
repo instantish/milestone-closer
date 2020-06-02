@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {Octokit} from '@octokit/rest';
+import { Context } from '@actions/github/lib/context';
+import { WebhookPayload } from '@actions/github/lib/interfaces';
 
 type OctoKitIssueList = Octokit.Response<Octokit.IssuesListForRepoResponse>;
 type OctoKitMilestoneList = Octokit.Response<
@@ -38,6 +40,7 @@ export interface Label {
 
 export interface MilestoneProcessorOptions {
   repoToken: string;
+  reopenActive: boolean;
   debugOnly: boolean;
 }
 
@@ -48,10 +51,12 @@ export class MilestoneProcessor {
   readonly client: github.GitHub;
   readonly options: MilestoneProcessorOptions;
   private operationsLeft: number = 0;
+  private relatedNotFound: boolean = false;
 
   readonly staleIssues: Issue[] = [];
   readonly closedIssues: Issue[] = [];
   readonly closedMilestones: Milestone[] = [];
+  readonly reopenedMilestones: Milestone[] = [];
 
   constructor(
     options: MilestoneProcessorOptions,
