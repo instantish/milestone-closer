@@ -100,7 +100,7 @@ export class MilestoneProcessor {
 
       core.debug(`Found milestone: #${number} - "${title}", last updated: ${updatedAt}`);
 
-      // Open closed open milestone
+      // Open closed milestone
       if (milestone.state === "closed" && this.options.reopenActive && openIssues > 0) {
         await this.openMilestone(milestone);
         continue;
@@ -118,7 +118,7 @@ export class MilestoneProcessor {
         continue;
       }
 
-      // Close open milestone instantly because there isn't a good way to tag milestones
+      // Close opened milestone instantly because there isn't a good way to tag milestones
       // and do another pass.
       if (milestone.state === "open") {
         await this.closeMilestone(milestone);
@@ -128,18 +128,6 @@ export class MilestoneProcessor {
     // do the next batch
     return this.processMilestones(page + 1);
   }
-
-  private getCheckPullRequest = (context: Context): boolean => 'pull_request' === context.eventName;
-
-  private getCheckPush = (context: Context): boolean => 'push' === context.eventName;
-
-  private emptyObject(object: Object | Array<any>): boolean {
-    if (object instanceof Array) {
-      return object === undefined || object.length == 0;
-    } else {
-      return Object.keys(object).length <= 0;
-    }
-  };
 
   // Get issues from github in baches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
@@ -171,7 +159,6 @@ export class MilestoneProcessor {
   milestonesResult = [...new Set([...allMilestoneResult.data, ...allClosedMilestoneResultValues])];
 
 
-    // core.debug(JSON.stringify(milestonesResult));
     return milestonesResult;
   }
 
