@@ -60,6 +60,8 @@ export class MilestoneProcessor {
     this.options = options;
     this.operationsLeft = OPERATIONS_PER_RUN;
     this.client = new github.GitHub(options.repoToken);
+    this.eventPullRequest = (this.options.debugOnly ? this.options.relatedOnly : this.getCheckPullRequest(github.context));
+    this.eventPush = (this.options.debugOnly ? this.options.relatedOnly : this.getCheckPush(github.context));
 
     if (getMilestones) {
       this.getMilestones = getMilestones;
@@ -84,6 +86,17 @@ export class MilestoneProcessor {
 
     if (milestones.length <= 0) {
       core.debug('No more milestones found to process. Exiting.');
+      return this.operationsLeft;
+    }
+
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.operationsLeft < (OPERATIONS_PER_RUN - 1) && !this.options.reopenActive) {
+      core.debug('Passing milestone last check. Exiting.');
+      return this.operationsLeft;
+    }
+
+    // for later prep: to add "this.eventPullRequest" for PR
+    if ((this.options.relatedOnly || this.options.relatedActive) && this.relatedNotFound && !this.options.reopenActive) {
+      core.debug('Related Milestone not found. While related-only is enabled. Exiting.');
       return this.operationsLeft;
     }
 
@@ -118,24 +131,102 @@ export class MilestoneProcessor {
 
   // Get issues from github in baches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
-    const milestoneResult: OctoKitMilestoneList = await this.client.issues.listMilestonesForRepo(
-      {
+
+    const currentPayload: WebhookPayload | any = github.context.payload;
+    let milestonesResult: Milestone[] = [];
+    let milestonesSelfResult: Milestone[] = [];
+    let milestonesPullsResult: Milestone[] = [];
+    let milestonesIssuesResult: Milestone[] = [];
+    let allClosedMilestoneResultValues: Milestone[] = [];
+
+    // Checks if related-only is true
+    // for later prep: (if this is a pull request to get the milestone specified)
+    if (this.options.relatedOnly || this.options.relatedActive) {
+
+      if (this.options.relatedOnly) {
+
+        // Get self Milestone
+        core.debug("Getting self Milestone...");
+
+        if (this.eventPush) {
+          // to check if need to keep or remove the action on all prs or just the first one
+          const commitResult: OctoKitCommitsPullsList = await this.client.repos.listPullRequestsAssociatedWithCommit({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            commit_sha: github.context.sha,
+          });
+          core.debug(JSON.stringify(commitResult));
+
+          if (!this.emptyObject(commitResult.data)) {
+            commitResult.data.forEach((pr: any) => {
+              if (!this.emptyObject(pr.milestone)) {
+                milestonesSelfResult.push(pr.milestone);
+              }
+            });
+          }
+        }
+
+      }
+
+      if (this.options.relatedActive) {
+
+        // Get milestones of PRs
+        // core.debug("Getting all PRs...");
+        // const pullResult: OctoKitPullsList = await this.client.pulls.list({
+        //   owner: github.context.repo.owner,
+        //   repo: github.context.repo.repo,
+        // });
+        // if (pullResult && pullResult.data[0]) {
+        //   core.debug(JSON.stringify(pullResult));
+        //   milestonesPullsResult = this.packMilestones(pullResult);
+        // }
+
+        // Get milestones with any issues linked on, to save some unwanted milestone collection
+        // core.debug("Getting all Issues with Milestones...");
+        // const issuesResult: OctoKitIssuesList = await this.client.issues.listForRepo({
+        //   owner: github.context.repo.owner,
+        //   repo: github.context.repo.repo,
+        //   milestone: "*",
+        // });
+        // if (issuesResult && issuesResult.data[0]) {
+        //   core.debug(JSON.stringify(issuesResult));
+        //   milestonesIssuesResult = this.packMilestones(issuesResult);
+        // }
+
+      }
+
+      milestonesResult = [...new Set([...milestonesSelfResult, ...milestonesPullsResult, ...milestonesIssuesResult])];
+
+    } else {
+
+      core.debug("Getting all Milestones");
+      const allMilestoneResult: OctoKitMilestoneList = await this.client.issues.listMilestonesForRepo({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         state: 'open',
         per_page: 100,
         page
-      }
-    );
+      });
+
+      milestonesResult = [...new Set([...allMilestoneResult.data])];
+
+    }
+
+    // core.debug(JSON.stringify(milestonesResult));
+    return milestonesResult;
+  }
 
     return milestoneResult.data;
   }
 
   /// Close an milestone
   private async closeMilestone(milestone: Milestone): Promise<void> {
-    core.debug(
-      `Closing milestone #${milestone.number} - ${milestone.title} for being stale`
-    );
+
+    if (this.eventPullRequest && this.options.relatedOnly) {
+      core.info(`Detected relatedOnly and that's a pr! Closing only the related Milestone #${milestone.number} - "${milestone.title}" (${this.options.debugOnly})`);
+    } else {
+      core.info(`Closing milestone #${milestone.number} - "${milestone.title}" (${this.options.debugOnly}) for being stale`);
+    }
 
     this.closedMilestones.push(milestone);
 

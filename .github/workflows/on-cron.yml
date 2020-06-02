@@ -1,0 +1,19 @@
+name: "Close / Open milestones automatically"
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  milestone-closer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Milestone closer message
+        run: echo Checking for milestones to close
+      - uses: actions/checkout@v2
+      - uses: ./
+        # reminder: this uses the previously generated index.js in dist/
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          related-only: false
+          reopen-active: true
+          debug-only: false
