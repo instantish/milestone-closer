@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {Octokit} from '@octokit/rest';
+import { Octokit } from '@octokit/rest';
 
 import {
   MilestoneProcessor,
@@ -21,7 +21,7 @@ function generateIssue(
   return {
     number: id,
     labels: labels.map(l => {
-      return {name: l};
+      return { name: l };
     }),
     title: title,
     updated_at: updatedAt,
@@ -192,3 +192,31 @@ test('processing a closed milestone detecting new open issues related, will reop
   expect(processor.reopenedMilestones.length).toEqual(1);
 });
 
+test('processing a closed milestone with closed issues, wont reopen it', async () => {
+
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'How was it 102?',
+      'Sprintedi',
+      '2020-01-01T17:00:00Z',
+      0,
+      5,
+      true
+    )
+  ];
+
+  DefaultProcessorOptions.reopenActive = true;
+
+  const processor = new MilestoneProcessor(
+    DefaultProcessorOptions,
+    async p => p == 1 ? TestMilestoneList : []
+  );
+
+  // process our fake list
+  await processor.processMilestones(1);
+
+  expect(processor.closedMilestones.length).toEqual(0);
+  expect(processor.reopenedMilestones.length).toEqual(0);
+});
