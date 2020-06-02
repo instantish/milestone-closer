@@ -55,7 +55,8 @@ function generateMilestone(
 
 const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
-  debugOnly: true
+  reopenActive: false,
+  debugOnly: true,
 };
 
 test('empty milestone list results in 1 operation', async () => {
@@ -162,3 +163,32 @@ test('processing a milestone with only a few issues will not close it', async ()
 
   expect(processor.closedMilestones.length).toEqual(0);
 });
+
+test('processing a closed milestone detecting new open issues related, will reopen it', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'How was it 958?',
+      'Sprinted',
+      '2020-01-01T17:00:00Z',
+      1,
+      0,
+      true
+    )
+  ];
+
+  DefaultProcessorOptions.reopenActive = true;
+
+  const processor = new MilestoneProcessor(
+    DefaultProcessorOptions,
+    async p => p == 1 ? TestMilestoneList : []
+  );
+
+  // process our fake list
+  await processor.processMilestones(1);
+
+  expect(processor.closedMilestones.length).toEqual(0);
+  expect(processor.reopenedMilestones.length).toEqual(1);
+});
+
