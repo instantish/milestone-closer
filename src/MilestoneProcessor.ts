@@ -92,12 +92,6 @@ export class MilestoneProcessor {
       return this.operationsLeft;
     }
 
-    // for later prep: to add "this.eventPullRequest" for PR
-    if (this.relatedNotFound && !this.options.reopenActive) {
-      core.debug('Related Milestone not found. While related-only is enabled. Exiting.');
-      return this.operationsLeft;
-    }
-
     for (const milestone of milestones.values()) {
       const totalIssues = milestone.open_issues + milestone.closed_issues;
       const {number, title} = milestone;
