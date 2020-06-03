@@ -174,7 +174,7 @@ export class MilestoneProcessor {
           });
 
           if (!this.emptyObject(commitResult.data)) {
-            for (let pr of commitResult.data) {
+            for (const pr of commitResult.data) {
               if (!this.emptyObject(pr.milestone)) {
                 core.debug(JSON.stringify(pr));
               }
