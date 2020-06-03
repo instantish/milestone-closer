@@ -56,7 +56,7 @@ function generateMilestone(
 const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
   relatedOnly: false,
-  reopenActive: false,
+  relatedActive: false,
   debugOnly: true,
 };
 

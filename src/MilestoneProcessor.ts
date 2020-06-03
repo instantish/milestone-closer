@@ -1,8 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {Octokit} from '@octokit/rest';
+import { Octokit } from '@octokit/rest';
 import { Context } from '@actions/github/lib/context';
-import { WebhookPayload } from '@actions/github/lib/interfaces';
 
 type OctoKitIssueList = Octokit.Response<Octokit.IssuesListForRepoResponse>;
 type OctoKitMilestoneList = Octokit.Response<
@@ -61,8 +60,6 @@ export class MilestoneProcessor {
   readonly closedIssues: Issue[] = [];
   readonly closedMilestones: Milestone[] = [];
 
-
-
   constructor(
     options: MilestoneProcessorOptions,
     getMilestones?: (page: number) => Promise<Milestone[]>
@@ -112,7 +109,7 @@ export class MilestoneProcessor {
 
     for (const milestone of milestones.values()) {
       const totalIssues = milestone.open_issues + milestone.closed_issues;
-      const {number, title} = milestone;
+      const { number, title } = milestone;
       const updatedAt = milestone.updated_at;
       const openIssues = milestone.open_issues;
 
@@ -143,23 +140,21 @@ export class MilestoneProcessor {
 
   private getCheckPush = (context: Context): boolean => 'push' === context.eventName;
 
-  private emptyObject(object: Object | Array<any>): boolean {
+  private emptyObject(object: Object | any[]): boolean {
     if (object instanceof Array) {
-      return object === undefined || object.length == 0;
+      return object === undefined || object.length === 0;
     } else {
       return Object.keys(object).length <= 0;
     }
   };
-  
-  // Get issues from github in baches of 100
+
+  // Get issues from github in batches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
 
-    const currentPayload: WebhookPayload | any = github.context.payload;
     let milestonesResult: Milestone[] = [];
-    let milestonesSelfResult: Milestone[] = [];
-    let milestonesPullsResult: Milestone[] = [];
-    let milestonesIssuesResult: Milestone[] = [];
-    let allClosedMilestoneResultValues: Milestone[] = [];
+    const milestonesSelfResult: Milestone[] = [];
+    // let milestonesPullsResult: Milestone[] = [];
+    // let milestonesIssuesResult: Milestone[] = [];
 
     // Checks if related-only is true
     // for later prep: (if this is a pull request to get the milestone specified)
@@ -177,14 +172,13 @@ export class MilestoneProcessor {
             repo: github.context.repo.repo,
             commit_sha: github.context.sha,
           });
-          core.debug(JSON.stringify(commitResult));
 
           if (!this.emptyObject(commitResult.data)) {
-            commitResult.data.forEach((pr: any) => {
+            for (let pr of commitResult.data) {
               if (!this.emptyObject(pr.milestone)) {
-                milestonesSelfResult.push(pr.milestone);
+                core.debug(JSON.stringify(pr));
               }
-            });
+            }
           }
         }
 
@@ -217,7 +211,8 @@ export class MilestoneProcessor {
 
       }
 
-      milestonesResult = [...new Set([...milestonesSelfResult, ...milestonesPullsResult, ...milestonesIssuesResult])];
+      // milestonesResult = [...new Set([...milestonesSelfResult, ...milestonesPullsResult, ...milestonesIssuesResult])];
+      milestonesResult = [...new Set([...milestonesSelfResult])];
 
     } else {
 
