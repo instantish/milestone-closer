@@ -8,8 +8,6 @@ type OctoKitMilestoneList = Octokit.Response<
 >;
 
 const OPERATIONS_PER_RUN = 100;
-// TODO: Expose as option.
-const MIN_ISSUES_IN_MILESTONE = 3;
 
 export interface Issue {
   title: string;
