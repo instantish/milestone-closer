@@ -163,3 +163,29 @@ test('processing a milestone with only a few issues will not close it', async ()
 
   expect(processor.closedMilestones.length).toEqual(0);
 });
+
+test('processing a milestone with `minimumIssues` should abide by its count', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'Sprint 1',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      0,
+      3
+    )
+  ];
+
+  DefaultProcessorOptions.minimumIssues = 4;
+
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
+  );
+
+  // process our fake list
+  await processor.processMilestones(1);
+
+  expect(processor.closedMilestones.length).toEqual(0);
+  expect(processor.options.minimumIssues).toEqual(4);
+});
