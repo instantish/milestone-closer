@@ -27,7 +27,7 @@ on:
   issues:
     types: [opened, deleted, closed, reopened, milestoned, demilestoned]
   pull_request:
-    types: [opened, closed, reopened, milestoned, demilestoned]
+    types: [opened, closed, reopened]
 
 jobs:
   milestone-closer:
