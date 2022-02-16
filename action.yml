@@ -10,7 +10,12 @@ inputs:
     required: true
   debug-only:
     description: 'Run the processor in debug mode without actually performing any operations on live milestones.'
-    default: false
+    required: false
+    default: 'false'
+  min-issues:
+    description: 'The minimum number of issues that a milestone needs to have to get closed.'
+    required: false
+    default: '3'
 runs:
   using: 'node12'
   main: 'dist/index.js'

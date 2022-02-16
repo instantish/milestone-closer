@@ -8,8 +8,6 @@ type OctoKitMilestoneList = Octokit.Response<
 >;
 
 const OPERATIONS_PER_RUN = 100;
-// TODO: Expose as option.
-const MIN_ISSUES_IN_MILESTONE = 3;
 
 export interface Issue {
   title: string;
@@ -39,6 +37,7 @@ export interface Label {
 export interface MilestoneProcessorOptions {
   repoToken: string;
   debugOnly: boolean;
+  minIssues: number;
 }
 
 /***
@@ -97,9 +96,9 @@ export class MilestoneProcessor {
         `Found milestone: milestone #${number} - ${title} last updated ${updatedAt}`
       );
 
-      if (totalIssues < MIN_ISSUES_IN_MILESTONE) {
+      if (totalIssues < this.options.minIssues) {
         core.debug(
-          `Skipping ${title} because it has less than ${MIN_ISSUES_IN_MILESTONE} issues`
+          `Skipping ${title} because it has less than ${this.options.minIssues} issues`
         );
         continue;
       }
