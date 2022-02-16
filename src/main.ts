@@ -10,7 +10,7 @@ async function run(): Promise<void> {
 
     const processor: MilestoneProcessor = new MilestoneProcessor(args);
     await processor.processMilestones();
-  } catch (error) {
+  } catch (error: any) {
     core.error(error);
     core.setFailed(error.message);
   }
@@ -24,9 +24,11 @@ function getAndValidateArgs(): MilestoneProcessorOptions {
   };
 
   if (!Number.isInteger(args.minIssues) || args.minIssues < 0)
-    throw `'${core.getInput(
-      'min-issues'
-    )}' is not a valid value for the 'min-issues' input, choose a non-negative integer.`;
+    throw new Error(
+      `'${core.getInput(
+        'min-issues'
+      )}' is not a valid value for the 'min-issues' input, choose a non-negative integer.`
+    );
 
   return args;
 }
