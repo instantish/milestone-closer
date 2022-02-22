@@ -1,6 +1,6 @@
 # Close milestones that are done
 
-Automatically closes milestones that have more than 3 issues/prs and all issues/prs are marked closed.
+Automatically closes milestones that have more than one issue/pr and all issues/prs are marked closed.
 
 ### Usage
 
@@ -36,6 +36,23 @@ jobs:
     - uses: instantish/milestone-closer@v1.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Uses a different minimum number of issues:
+```yaml
+name: "Close finished milestones"
+on:
+  schedule:
+  - cron: "*/20 * * * *"
+
+jobs:
+  milestone-closer:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: instantish/milestone-closer@v1.1.0
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        min-issues: 3
 ```
 
 See [action.yml](./action.yml) for the full list of options.

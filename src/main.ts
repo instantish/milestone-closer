@@ -17,10 +17,17 @@ async function run(): Promise<void> {
 }
 
 function getAndValidateArgs(): MilestoneProcessorOptions {
-  const args = {
+  const args: MilestoneProcessorOptions = {
     repoToken: core.getInput('repo-token', {required: true}),
-    debugOnly: core.getInput('debug-only') === 'true'
+    debugOnly: core.getInput('debug-only') === 'true',
+    minIssues: Number(core.getInput('min-issues', {required: true}))
   };
+
+  if (!Number.isInteger(args.minIssues) || args.minIssues < 0)
+    throw `'${core.getInput(
+      'min-issues'
+    )}' is not a valid value for the 'min-issues' input, choose a non-negative integer.`;
+
   return args;
 }
 

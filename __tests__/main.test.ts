@@ -55,7 +55,8 @@ function generateMilestone(
 
 const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
-  debugOnly: true
+  debugOnly: true,
+  minIssues: 1
 };
 
 test('empty milestone list results in 1 operation', async () => {
