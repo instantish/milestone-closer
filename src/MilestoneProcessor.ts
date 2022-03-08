@@ -2,10 +2,8 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {Octokit} from '@octokit/rest';
 
-type OctoKitIssueList = Octokit.Response<Octokit.IssuesListForRepoResponse>;
-type OctoKitMilestoneList = Octokit.Response<
-  Octokit.IssuesListMilestonesForRepoResponse
->;
+type OctoKitMilestoneList =
+  Octokit.Response<Octokit.IssuesListMilestonesForRepoResponse>;
 
 const OPERATIONS_PER_RUN = 100;
 
@@ -46,7 +44,7 @@ export interface MilestoneProcessorOptions {
 export class MilestoneProcessor {
   readonly client: github.GitHub;
   readonly options: MilestoneProcessorOptions;
-  private operationsLeft: number = 0;
+  private operationsLeft = 0;
 
   readonly staleIssues: Issue[] = [];
   readonly closedIssues: Issue[] = [];
@@ -71,7 +69,7 @@ export class MilestoneProcessor {
     }
   }
 
-  async processMilestones(page: number = 1): Promise<number> {
+  async processMilestones(page = 1): Promise<number> {
     if (this.operationsLeft <= 0) {
       core.warning('Reached max number of operations to process. Exiting.');
       return 0;
@@ -117,15 +115,14 @@ export class MilestoneProcessor {
 
   // Get issues from github in baches of 100
   private async getMilestones(page: number): Promise<Milestone[]> {
-    const milestoneResult: OctoKitMilestoneList = await this.client.issues.listMilestonesForRepo(
-      {
+    const milestoneResult: OctoKitMilestoneList =
+      await this.client.issues.listMilestonesForRepo({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         state: 'open',
         per_page: 100,
         page
-      }
-    );
+      });
 
     return milestoneResult.data;
   }
