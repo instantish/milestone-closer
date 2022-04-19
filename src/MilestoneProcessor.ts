@@ -35,6 +35,7 @@ export interface Label {
 export interface MilestoneProcessorOptions {
   debugOnly: boolean;
   minIssues: number;
+  reopenActive: boolean;
   repoToken: string;
 }
 
@@ -44,9 +45,8 @@ export class MilestoneProcessor {
   readonly options: MilestoneProcessorOptions;
   private operationsLeft = 0;
 
-  readonly staleIssues: Issue[] = [];
-  readonly closedIssues: Issue[] = [];
   readonly closedMilestones: Milestone[] = [];
+  readonly reopenedMilestones: Milestone[] = [];
 
   constructor(
     options: MilestoneProcessorOptions,
@@ -96,15 +96,16 @@ export class MilestoneProcessor {
         core.debug(
           `Skipping ${title} because it has less than ${this.options.minIssues} issues`
         );
-        continue;
+      } else if (openIssues > 0) {
+        if (milestone.state === 'open')
+          core.debug(`Skipping ${title} because it has open issues/prs`);
+        else if (this.options.reopenActive)
+          await this.reopenMilestone(milestone);
+      } else if (milestone.state === 'open') {
+        // Close instantly because there isn't a good way to tag milestones
+        // and do another pass.
+        await this.closeMilestone(milestone);
       }
-      if (openIssues > 0) {
-        core.debug(`Skipping ${title} because it has open issues/prs`);
-        continue;
-      }
-      // Close instantly because there isn't a good way to tag milestones
-      // and do another pass.
-      await this.closeMilestone(milestone);
     }
 
     // do the next batch
@@ -125,23 +126,33 @@ export class MilestoneProcessor {
     return milestoneResult.data;
   }
 
-  /** Close a milestone */
   private async closeMilestone(milestone: Milestone): Promise<void> {
-    core.debug(
-      `Closing milestone #${milestone.number} - ${milestone.title} for being stale`
-    );
+    core.debug(`Closing milestone #${milestone.number} - ${milestone.title}`);
 
     this.closedMilestones.push(milestone);
 
-    if (this.options.debugOnly) {
-      return;
-    }
+    if (this.options.debugOnly) return;
 
     await this.client.issues.updateMilestone({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       milestone_number: milestone.number,
       state: 'closed'
+    });
+  }
+
+  private async reopenMilestone(milestone: Milestone): Promise<void> {
+    core.debug(`Reopening milestone #${milestone.number} - ${milestone.title}`);
+
+    this.reopenedMilestones.push(milestone);
+
+    if (this.options.debugOnly) return;
+
+    await this.client.issues.updateMilestone({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      milestone_number: milestone.number,
+      state: 'open'
     });
   }
 }

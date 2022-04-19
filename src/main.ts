@@ -18,8 +18,9 @@ async function run(): Promise<void> {
 
 function getAndValidateArgs(): MilestoneProcessorOptions {
   const args: MilestoneProcessorOptions = {
-    debugOnly: core.getBooleanInput('debug-only'),
+    debugOnly: core.getBooleanInput('debug-only', {required: true}),
     minIssues: Number(core.getInput('min-issues', {required: true})),
+    reopenActive: core.getBooleanInput('reopen-active', {required: true}),
     repoToken: core.getInput('repo-token', {required: true})
   };
 
