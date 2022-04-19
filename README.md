@@ -15,7 +15,7 @@ jobs:
   milestone-closer:
     runs-on: ubuntu-latest
     steps:
-    - uses: instantish/milestone-closer@v1.1.0
+    - uses: instantish/milestone-closer@v1
 ```
 
 Runs on issue and PR updates:
@@ -31,7 +31,7 @@ jobs:
   milestone-closer:
     runs-on: ubuntu-latest
     steps:
-    - uses: instantish/milestone-closer@v1.1.0
+    - uses: instantish/milestone-closer@v1
 ```
 
 Uses a different minimum number of issues:
@@ -45,7 +45,7 @@ jobs:
   milestone-closer:
     runs-on: ubuntu-latest
     steps:
-    - uses: instantish/milestone-closer@v1.1.0
+    - uses: instantish/milestone-closer@v1
       with:
         min-issues: 3
 ```
