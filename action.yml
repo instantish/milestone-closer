@@ -5,9 +5,6 @@ branding:
   icon: 'book'  
   color: 'green'
 inputs:
-  repo-token:
-    description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
-    required: true
   debug-only:
     description: 'Run the processor in debug mode without actually performing any operations on live milestones.'
     required: false
@@ -16,6 +13,10 @@ inputs:
     description: 'The minimum number of issues that a milestone needs to have to get closed.'
     required: false
     default: '1'
+  repo-token:
+    description: 'Token used to access the repository.'
+    required: false
+    default: ${{ github.token }}
 runs:
   using: 'node12'
   main: 'dist/index.js'

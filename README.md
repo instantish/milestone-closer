@@ -16,8 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: instantish/milestone-closer@v1.1.0
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 Runs on issue and PR updates:
@@ -34,8 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: instantish/milestone-closer@v1.1.0
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 Uses a different minimum number of issues:
@@ -51,7 +47,6 @@ jobs:
     steps:
     - uses: instantish/milestone-closer@v1.1.0
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
         min-issues: 3
 ```
 

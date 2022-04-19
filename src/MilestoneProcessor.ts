@@ -33,9 +33,9 @@ export interface Label {
 }
 
 export interface MilestoneProcessorOptions {
-  repoToken: string;
   debugOnly: boolean;
   minIssues: number;
+  repoToken: string;
 }
 
 /** Handle processing of issues for staleness/closure. */
