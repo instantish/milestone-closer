@@ -38,9 +38,7 @@ export interface MilestoneProcessorOptions {
   minIssues: number;
 }
 
-/***
- * Handle processing of issues for staleness/closure.
- */
+/** Handle processing of issues for staleness/closure. */
 export class MilestoneProcessor {
   readonly client: github.GitHub;
   readonly options: MilestoneProcessorOptions;
@@ -113,7 +111,7 @@ export class MilestoneProcessor {
     return this.processMilestones(page + 1);
   }
 
-  // Get issues from github in baches of 100
+  /** Get issues from GitHub in baches of 100 */
   private async getMilestones(page: number): Promise<Milestone[]> {
     const milestoneResult: OctoKitMilestoneList =
       await this.client.issues.listMilestonesForRepo({
@@ -127,7 +125,7 @@ export class MilestoneProcessor {
     return milestoneResult.data;
   }
 
-  /// Close an milestone
+  /** Close a milestone */
   private async closeMilestone(milestone: Milestone): Promise<void> {
     core.debug(
       `Closing milestone #${milestone.number} - ${milestone.title} for being stale`
