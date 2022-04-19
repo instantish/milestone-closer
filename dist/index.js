@@ -1,197 +1,6 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 2143:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MilestoneProcessor = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const OPERATIONS_PER_RUN = 100;
-/***
- * Handle processing of issues for staleness/closure.
- */
-class MilestoneProcessor {
-    constructor(options, getMilestones) {
-        this.operationsLeft = 0;
-        this.staleIssues = [];
-        this.closedIssues = [];
-        this.closedMilestones = [];
-        this.options = options;
-        this.operationsLeft = OPERATIONS_PER_RUN;
-        this.client = new github.GitHub(options.repoToken);
-        if (getMilestones) {
-            this.getMilestones = getMilestones;
-        }
-        if (this.options.debugOnly) {
-            core.warning('Executing in debug mode. Debug output will be written but no milestones will be processed.');
-        }
-    }
-    processMilestones(page = 1) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.operationsLeft <= 0) {
-                core.warning('Reached max number of operations to process. Exiting.');
-                return 0;
-            }
-            // get the next batch of milestones
-            const milestones = yield this.getMilestones(page);
-            this.operationsLeft -= 1;
-            if (milestones.length <= 0) {
-                core.debug('No more milestones found to process. Exiting.');
-                return this.operationsLeft;
-            }
-            for (const milestone of milestones.values()) {
-                const totalIssues = milestone.open_issues + milestone.closed_issues;
-                const { number, title } = milestone;
-                const updatedAt = milestone.updated_at;
-                const openIssues = milestone.open_issues;
-                core.debug(`Found milestone: milestone #${number} - ${title} last updated ${updatedAt}`);
-                if (totalIssues < this.options.minIssues) {
-                    core.debug(`Skipping ${title} because it has less than ${this.options.minIssues} issues`);
-                    continue;
-                }
-                if (openIssues > 0) {
-                    core.debug(`Skipping ${title} because it has open issues/prs`);
-                    continue;
-                }
-                // Close instantly because there isn't a good way to tag milestones
-                // and do another pass.
-                yield this.closeMilestone(milestone);
-            }
-            // do the next batch
-            return this.processMilestones(page + 1);
-        });
-    }
-    // Get issues from github in baches of 100
-    getMilestones(page) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const milestoneResult = yield this.client.issues.listMilestonesForRepo({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                state: 'open',
-                per_page: 100,
-                page
-            });
-            return milestoneResult.data;
-        });
-    }
-    /// Close an milestone
-    closeMilestone(milestone) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.debug(`Closing milestone #${milestone.number} - ${milestone.title} for being stale`);
-            this.closedMilestones.push(milestone);
-            if (this.options.debugOnly) {
-                return;
-            }
-            yield this.client.issues.updateMilestone({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                milestone_number: milestone.number,
-                state: 'closed'
-            });
-        });
-    }
-}
-exports.MilestoneProcessor = MilestoneProcessor;
-
-
-/***/ }),
-
-/***/ 3109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const MilestoneProcessor_1 = __nccwpck_require__(2143);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const args = getAndValidateArgs();
-            const processor = new MilestoneProcessor_1.MilestoneProcessor(args);
-            yield processor.processMilestones();
-        }
-        catch (error) {
-            core.error(error);
-            core.setFailed(error.message);
-        }
-    });
-}
-function getAndValidateArgs() {
-    const args = {
-        repoToken: core.getInput('repo-token', { required: true }),
-        debugOnly: core.getInput('debug-only') === 'true',
-        minIssues: Number(core.getInput('min-issues', { required: true }))
-    };
-    if (!Number.isInteger(args.minIssues) || args.minIssues < 0)
-        throw new Error(`'${core.getInput('min-issues')}' is not a valid value for the 'min-issues' input, choose a non-negative integer.`);
-    return args;
-}
-run();
-
-
-/***/ }),
-
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -28068,6 +27877,195 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 3178:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MilestoneProcessor = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const OPERATIONS_PER_RUN = 100;
+/** Handle processing of issues for staleness/closure. */
+class MilestoneProcessor {
+    constructor(options, getMilestones) {
+        this.operationsLeft = 0;
+        this.staleIssues = [];
+        this.closedIssues = [];
+        this.closedMilestones = [];
+        this.options = options;
+        this.operationsLeft = OPERATIONS_PER_RUN;
+        this.client = new github.GitHub(options.repoToken);
+        if (getMilestones) {
+            this.getMilestones = getMilestones;
+        }
+        if (this.options.debugOnly) {
+            core.warning('Executing in debug mode. Debug output will be written but no milestones will be processed.');
+        }
+    }
+    processMilestones(page = 1) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.operationsLeft <= 0) {
+                core.warning('Reached max number of operations to process. Exiting.');
+                return 0;
+            }
+            // get the next batch of milestones
+            const milestones = yield this.getMilestones(page);
+            this.operationsLeft -= 1;
+            if (milestones.length <= 0) {
+                core.debug('No more milestones found to process. Exiting.');
+                return this.operationsLeft;
+            }
+            for (const milestone of milestones.values()) {
+                const totalIssues = milestone.open_issues + milestone.closed_issues;
+                const { number, title } = milestone;
+                const updatedAt = milestone.updated_at;
+                const openIssues = milestone.open_issues;
+                core.debug(`Found milestone: milestone #${number} - ${title} last updated ${updatedAt}`);
+                if (totalIssues < this.options.minIssues) {
+                    core.debug(`Skipping ${title} because it has less than ${this.options.minIssues} issues`);
+                    continue;
+                }
+                if (openIssues > 0) {
+                    core.debug(`Skipping ${title} because it has open issues/prs`);
+                    continue;
+                }
+                // Close instantly because there isn't a good way to tag milestones
+                // and do another pass.
+                yield this.closeMilestone(milestone);
+            }
+            // do the next batch
+            return this.processMilestones(page + 1);
+        });
+    }
+    /** Get issues from GitHub in baches of 100 */
+    getMilestones(page) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const milestoneResult = yield this.client.issues.listMilestonesForRepo({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                state: 'open',
+                per_page: 100,
+                page
+            });
+            return milestoneResult.data;
+        });
+    }
+    /** Close a milestone */
+    closeMilestone(milestone) {
+        return __awaiter(this, void 0, void 0, function* () {
+            core.debug(`Closing milestone #${milestone.number} - ${milestone.title} for being stale`);
+            this.closedMilestones.push(milestone);
+            if (this.options.debugOnly) {
+                return;
+            }
+            yield this.client.issues.updateMilestone({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                milestone_number: milestone.number,
+                state: 'closed'
+            });
+        });
+    }
+}
+exports.MilestoneProcessor = MilestoneProcessor;
+
+
+/***/ }),
+
+/***/ 399:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const MilestoneProcessor_1 = __nccwpck_require__(3178);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const args = getAndValidateArgs();
+            const processor = new MilestoneProcessor_1.MilestoneProcessor(args);
+            yield processor.processMilestones();
+        }
+        catch (error) {
+            core.error(error);
+            core.setFailed(error.message);
+        }
+    });
+}
+function getAndValidateArgs() {
+    const args = {
+        debugOnly: core.getBooleanInput('debug-only'),
+        minIssues: Number(core.getInput('min-issues', { required: true })),
+        repoToken: core.getInput('repo-token', { required: true })
+    };
+    if (!Number.isInteger(args.minIssues) || args.minIssues < 0)
+        throw new Error(`'${core.getInput('min-issues')}' is not a valid value for the 'min-issues' input, choose a non-negative integer.`);
+    return args;
+}
+run();
+
+
+/***/ }),
+
 /***/ 2877:
 /***/ ((module) => {
 
@@ -28254,7 +28252,7 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(3109);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(399);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
