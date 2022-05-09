@@ -10,9 +10,13 @@ inputs:
     required: false
     default: 'false'
   min-issues:
-    description: 'The minimum number of issues that a milestone needs to have to get closed.'
+    description: 'The minimum number of issues that a milestone needs to have to be processed.'
     required: false
     default: '1'
+  reopen-active:
+    description: 'Whether to reopen milestones with open issues.'
+    required: false
+    default: 'false'
   repo-token:
     description: 'Token used to access the repository.'
     required: false

@@ -56,6 +56,7 @@ function generateMilestone(
 const DefaultProcessorOptions: MilestoneProcessorOptions = {
   repoToken: 'none',
   debugOnly: true,
+  reopenActive: false,
   minIssues: 1
 };
 
@@ -72,7 +73,7 @@ test('empty milestone list results in 1 operation', async () => {
   expect(operationsLeft).toEqual(99);
 });
 
-test('processing a milestone with all closed issues will close it', async () => {
+it('should close an open milestone with only closed issues', async () => {
   const TestMilestoneList: Milestone[] = [
     generateMilestone(
       1234,
@@ -95,30 +96,7 @@ test('processing a milestone with all closed issues will close it', async () => 
   expect(processor.closedMilestones.length).toEqual(1);
 });
 
-test('processing a milestone with only closed issues will close it', async () => {
-  const TestMilestoneList: Milestone[] = [
-    generateMilestone(
-      1234,
-      1,
-      'My first issue',
-      'First sprint',
-      '2020-01-01T17:00:00Z',
-      0,
-      100
-    )
-  ];
-
-  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
-    p == 1 ? TestMilestoneList : []
-  );
-
-  // process our fake list
-  await processor.processMilestones(1);
-
-  expect(processor.closedMilestones.length).toEqual(1);
-});
-
-test('processing a milestone with only open issues will not close it', async () => {
+it('should not close an open milestone with only open issues', async () => {
   const TestMilestoneList: Milestone[] = [
     generateMilestone(
       1234,
@@ -141,7 +119,7 @@ test('processing a milestone with only open issues will not close it', async () 
   expect(processor.closedMilestones.length).toEqual(0);
 });
 
-test('processing a milestone with only a few issues will not close it', async () => {
+it('should not close an open milestone with an open issue', async () => {
   const TestMilestoneList: Milestone[] = [
     generateMilestone(
       1234,
@@ -150,7 +128,7 @@ test('processing a milestone with only a few issues will not close it', async ()
       'First sprint',
       '2020-01-01T17:00:00Z',
       1,
-      1
+      10
     )
   ];
 
@@ -162,4 +140,122 @@ test('processing a milestone with only a few issues will not close it', async ()
   await processor.processMilestones(1);
 
   expect(processor.closedMilestones.length).toEqual(0);
+});
+
+it('it should not process an milestone with not enough issues', async () => {
+  const TestMilestoneList: Milestone[] = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      1,
+      1
+    ),
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      1,
+      1,
+      true
+    )
+  ];
+
+  const options: MilestoneProcessorOptions = {
+    ...DefaultProcessorOptions,
+    minIssues: 10
+  };
+
+  const processor = new MilestoneProcessor(options, async p =>
+    p == 1 ? TestMilestoneList : []
+  );
+
+  // process our fake list
+  await processor.processMilestones(1);
+
+  expect(processor.closedMilestones.length).toEqual(0);
+  expect(processor.reopenedMilestones.length).toEqual(0);
+});
+
+it('should not reopen a closed milestone if reopen-active is false', async () => {
+  const TestMilestoneList = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      1,
+      1,
+      true
+    )
+  ];
+
+  const processor = new MilestoneProcessor(DefaultProcessorOptions, async p =>
+    p == 1 ? TestMilestoneList : []
+  );
+
+  await processor.processMilestones(1);
+
+  expect(processor.reopenedMilestones.length).toEqual(0);
+});
+
+it('should not reopen a closed milestone if it has no open issues', async () => {
+  const TestMilestoneList = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      0,
+      10,
+      true
+    )
+  ];
+
+  const options: MilestoneProcessorOptions = {
+    ...DefaultProcessorOptions,
+    reopenActive: true
+  };
+
+  const processor = new MilestoneProcessor(options, async p =>
+    p == 1 ? TestMilestoneList : []
+  );
+
+  await processor.processMilestones(1);
+
+  expect(processor.reopenedMilestones.length).toEqual(0);
+});
+
+it('should reopen a closed milestone if it has an open issue', async () => {
+  const TestMilestoneList = [
+    generateMilestone(
+      1234,
+      1,
+      'My first issue',
+      'First sprint',
+      '2020-01-01T17:00:00Z',
+      1,
+      1,
+      true
+    )
+  ];
+
+  const options: MilestoneProcessorOptions = {
+    ...DefaultProcessorOptions,
+    reopenActive: true
+  };
+
+  const processor = new MilestoneProcessor(options, async p =>
+    p == 1 ? TestMilestoneList : []
+  );
+
+  await processor.processMilestones(1);
+
+  expect(processor.reopenedMilestones.length).toEqual(1);
 });
