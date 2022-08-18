@@ -23,7 +23,7 @@
   "author": "Instantish",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^2.2.0",
     "@octokit/rest": "^16.43.1"
   },
